@@ -1,112 +1,149 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'utils/auth.dart' as fbAuth;
+import 'utils/storage.dart' as fbStorage;
 
-void main() => runApp(MyApp());
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:path/path.dart';
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+void main() async {
+  final FirebaseApp app = await FirebaseApp.configure(
+      name: 'closr_chat',
+      options: FirebaseOptions(
+        googleAppID: "1:94320095180:android:76cbcbf742825ec6",
+        gcmSenderID: "94320095180",
+        apiKey: "AIzaSyABcU0VQiNY1V4BAT8PCbMLN7MGsXuWAZs",
+        projectID: "closrchat",
+      ));
+
+  final FirebaseStorage storage =
+      FirebaseStorage(app: app, storageBucket: 'gs://closrchat.appspot.com');
+
+  runApp(MaterialApp(
+    home: MyApp(storage: storage),
+  ));
+}
+
+class MyApp extends StatefulWidget {
+  MyApp({this.storage});
+  final FirebaseStorage storage;
+
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+  _State createState() => _State(storage: storage);
+}
+
+class _State extends State<MyApp> {
+  _State({this.storage});
+  final FirebaseStorage storage;
+
+  String _status;
+  String _location;
+
+  @override
+  void initState() {
+    _status = "Not Authenticated";
+    _signIn();
   }
-}
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+  void _signIn() async {
+    if (await fbAuth.signInGoogle() == true) {
+      setState(() {
+        _status = "Signed In";
+      });
+    } else {
+      setState(() {
+        _status = "Could not sign in";
+      });
+    }
+  }
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+  void _signOut() async {
+    if (await fbAuth.signOut() == true) {
+      setState(() {
+        _status = "Signed out";
+      });
+    } else {
+      setState(() {
+        _status = "Signed in";
+      });
+    }
+  }
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
+  void _upload() async {
+    Directory systemTempDir = Directory.systemTemp;
+    File file = await File('${systemTempDir.path}/foo.txt').create();
+    file.writeAsString("hello world");
 
-  final String title;
-
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
+    String location = await fbStorage.upload(file, basename(file.path));
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _location = location;
+      _status = 'Uploaded!';
+    });
+    print("Uploaded to ${_location}");
+  }
+
+  void _download() async {
+    if (_location.isEmpty) {
+      setState(() {
+        _status = "Please Upload first!";
+      });
+      return;
+    }
+    Uri location = Uri.parse(_location);
+    String data = await fbStorage.download(location);
+    setState(() {
+      _status = "Downloaded: ${data}";
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text("Closr Chat"),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
-            ),
-          ],
+      body: Container(
+        padding: EdgeInsets.all(32.0),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Text(_status),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  RaisedButton(
+                    onPressed: _signOut,
+                    child: Text("Sign Out"),
+                  ),
+                  RaisedButton(
+                    onPressed: _signIn,
+                    child: Text("Sign In"),
+                  )
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  RaisedButton(
+                    onPressed: _upload,
+                    child: Text("Upload"),
+                  ),
+                  RaisedButton(
+                    onPressed: _download,
+                    child: Text("Download"),
+                  )
+                ],
+              )
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }

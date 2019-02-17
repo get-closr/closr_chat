@@ -5,8 +5,13 @@ buildscript {
     }
 
     dependencies {
+        //Google Auth
         classpath 'com.android.tools.build:gradle:3.2.1'
         classpath 'com.google.gms:google-services:4.0.1'
+
+        //Flutter Auth
+        classpath 'com.android.tools.build:gradle:3.2.1'
+        classpath 'com.google.gms:google-services:4.2.0'
     }
 }
 
