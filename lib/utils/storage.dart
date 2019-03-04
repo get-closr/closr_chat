@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:async';
-import 'package:firebase_core/firebase_core.dart';
+//import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:closr_chat/utils/auth.dart' as auth;
@@ -8,7 +8,7 @@ import 'package:closr_chat/utils/auth.dart' as auth;
 Future<String> upload(File file, String basename) async {
   await auth.ensureLoggedIn();
   StorageReference ref =
-      FirebaseStorage.instance.ref().child('file/test/${basename}');
+      FirebaseStorage.instance.ref().child('file/test/$basename');
 
   StorageUploadTask uploadTask = ref.putFile(file);
 
@@ -18,10 +18,10 @@ Future<String> upload(File file, String basename) async {
   String bucket = await ref.getBucket();
   String path = await ref.getPath();
 
-  print("url: ${location}");
-  print("Name: ${name}");
-  print("Bucket: ${bucket}");
-  print("Path: ${path}");
+  print("url: $location");
+  print("Name: $name");
+  print("Bucket: $bucket");
+  print("Path: $path");
 
   return location;
 }

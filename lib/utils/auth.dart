@@ -32,3 +32,9 @@ Future<bool> signInGoogle() async {
     return false;
   }
 }
+
+Future<String> username() async {
+  await ensureLoggedIn();
+  FirebaseUser firebaseUser = await _auth.currentUser();
+  return firebaseUser.uid;
+}

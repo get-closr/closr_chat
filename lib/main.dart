@@ -3,55 +3,78 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'utils/auth.dart' as fbAuth;
 import 'utils/storage.dart' as fbStorage;
+import 'utils/database.dart' as fbDatabase;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:path/path.dart';
+import 'package:closr_chat/untracked/specs.dart';
 
 void main() async {
+
   final FirebaseApp app = await FirebaseApp.configure(
       name: 'closr_chat',
       options: FirebaseOptions(
-        googleAppID: "1:94320095180:android:76cbcbf742825ec6",
-        gcmSenderID: "94320095180",
-        apiKey: "AIzaSyABcU0VQiNY1V4BAT8PCbMLN7MGsXuWAZs",
-        projectID: "closrchat",
+        googleAppID: googleAppID,
+        gcmSenderID: gcmSenderID,
+        apiKey: apiKey,
+        projectID: projectID,
       ));
 
   final FirebaseStorage storage =
-      FirebaseStorage(app: app, storageBucket: 'gs://closrchat.appspot.com');
+      FirebaseStorage(
+          app: app,
+          storageBucket: storageBucket
+      );
+  final FirebaseDatabase database = FirebaseDatabase(app: app);
 
   runApp(MaterialApp(
-    home: MyApp(storage: storage),
+    home: MyApp(
+      app:app,
+      storage: storage,
+      database: database,
+    ),
   ));
 }
 
 class MyApp extends StatefulWidget {
-  MyApp({this.storage});
+  MyApp({this.app, this.storage, this.database});
+  final FirebaseApp app;
   final FirebaseStorage storage;
+  final FirebaseDatabase database;
 
   @override
-  _State createState() => _State(storage: storage);
+  _State createState() => _State(app:app,storage: storage,database:database);
 }
 
 class _State extends State<MyApp> {
-  _State({this.storage});
+  _State({this.app,this.storage, this.database});
+  final FirebaseApp app;
   final FirebaseStorage storage;
+  final FirebaseDatabase database;
 
   String _status;
   String _location;
+  StreamSubscription<Event> _counterSubscription;
+
+  String _username;
 
   @override
   void initState() {
+    super.initState();
     _status = "Not Authenticated";
     _signIn();
   }
 
   void _signIn() async {
     if (await fbAuth.signInGoogle() == true) {
+      _username = await fbAuth.username();
       setState(() {
         _status = "Signed In";
+
       });
+      _initDatabase();
     } else {
       setState(() {
         _status = "Could not sign in";
@@ -81,7 +104,7 @@ class _State extends State<MyApp> {
       _location = location;
       _status = 'Uploaded!';
     });
-    print("Uploaded to ${_location}");
+    print("Uploaded to $_location");
   }
 
   void _download() async {
@@ -94,7 +117,60 @@ class _State extends State<MyApp> {
     Uri location = Uri.parse(_location);
     String data = await fbStorage.download(location);
     setState(() {
-      _status = "Downloaded: ${data}";
+      _status = "Downloaded: $data";
+    });
+  }
+
+  void _initDatabase() async {
+    fbDatabase.init(database);
+    _counterSubscription = fbDatabase.counterRef.onValue.listen((Event event){
+      setState(() {
+        fbDatabase.error = null;
+        fbDatabase.counter = event.snapshot.value ?? 0;
+      });
+    }, onError: (Object o){
+      final DatabaseError error = o;
+      setState(() {
+        fbDatabase.error = error;
+      });
+    });
+  }
+
+  void _increment() async {
+    int value = fbDatabase.counter + 1;
+    fbDatabase.setCounter(value);
+  }
+
+  void _decrement() async {
+    int value = fbDatabase.counter - 1;
+    fbDatabase.setCounter(value);
+  }
+
+  void _addData() async {
+    await fbDatabase.addData(_username);
+    setState(() {
+      _status = "Data Added";
+    });
+  }
+
+  void _removeData() async {
+    await fbDatabase.removeData(_username);
+    setState(() {
+      _status = "Data Removed";
+    });
+  }
+  
+  void _setData(String key, String value) async {
+    await fbDatabase.setData(_username, key, value);
+    setState(() {
+      _status = "Data set";
+    });
+  }
+
+  void _updateData(String key, String value) async {
+    await fbDatabase.setData(_username, key, value);
+    setState(() {
+      _status = "Data updated";
     });
   }
 
@@ -112,32 +188,30 @@ class _State extends State<MyApp> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Text(_status),
+              Text('Counter ${fbDatabase.counter}'),
+              Text('Counter ${fbDatabase.error.toString()}'),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
-                  RaisedButton(
-                    onPressed: _signOut,
-                    child: Text("Sign Out"),
-                  ),
-                  RaisedButton(
-                    onPressed: _signIn,
-                    child: Text("Sign In"),
-                  )
+                  RaisedButton(onPressed: _signOut, child: Text("Sign Out"),),
+                  RaisedButton(onPressed: _signIn, child: Text("Sign In"),)
                 ],
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
-                  RaisedButton(
-                    onPressed: _upload,
-                    child: Text("Upload"),
-                  ),
-                  RaisedButton(
-                    onPressed: _download,
-                    child: Text("Download"),
-                  )
+                  RaisedButton(onPressed: _addData, child: Text("Add Data"),),
+                  RaisedButton(onPressed: _removeData, child: Text("Remove Data"),)
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  RaisedButton(onPressed: () => _setData('Key2','This is a set value'), child: Text("Set Data"),),
+                  RaisedButton(onPressed: () => _updateData('Key2', 'This is a updated value'), child: Text("Update Data"),)
                 ],
               )
             ],
