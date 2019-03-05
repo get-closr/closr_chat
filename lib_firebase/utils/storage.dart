@@ -3,7 +3,8 @@ import 'dart:async';
 //import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:closr_chat/utils/auth.dart' as auth;
+//import 'utils/auth.dart' as auth;
+import 'auth.dart' as auth;
 
 Future<String> upload(File file, String basename) async {
   await auth.ensureLoggedIn();
