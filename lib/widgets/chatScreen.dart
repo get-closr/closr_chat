@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
 
-import 'chatList.dart';
-import 'textComposer.dart';
+import 'package:closr_chat/widgets/firestoreMessageStream.dart';
+import 'package:closr_chat/widgets/textComposer.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 
 enum MenuItem {
   signout
@@ -18,6 +20,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<Map<String, dynamic>> _dummySnapshot = [];
   final _googleSignIn = GoogleSignIn();
   GoogleSignInAccount _currentUser;
+  final _firebaseAuth = FirebaseAuth.instance;
+  FirebaseUser _firebaseUser;
 
   @override
   void initState() {
@@ -26,9 +30,30 @@ class _ChatScreenState extends State<ChatScreen> {
     _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount account) {
       setState(() {
         _currentUser = account;
+        _firebaseAuth.currentUser().then((firebaseUser){
+          if (_firebaseUser == null)
+            _getFirebaseUser().then((firebaseUser){
+              setState(() {
+                _firebaseUser = firebaseUser;
+              });
+            });
+          else
+            setState(() {
+              _firebaseUser = firebaseUser;
+            });
+        });
       });
     });
     _googleSignIn.signInSilently();
+  }
+
+  Future<FirebaseUser> _getFirebaseUser() async {
+    var tokens = await _googleSignIn.currentUser.authentication;
+
+    final AuthCredential credential = GoogleAuthProvider.getCredential(
+        accessToken: tokens.accessToken, idToken: tokens.idToken);
+
+    return await _firebaseAuth.signInWithCredential(credential);
   }
 
   Future<Null> _handleSignIn() async {
@@ -41,20 +66,9 @@ class _ChatScreenState extends State<ChatScreen> {
     _googleSignIn.disconnect();
   }
 
-  void _sendMessageCallback(String text) {
-    setState(() {
-      _dummySnapshot.insert(0, {
-        'name': _googleSignIn.currentUser.displayName,
-        'avatarUrl': _googleSignIn.currentUser.photoUrl,
-        'photoUrl': '',
-        'text': text,
-      });
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (_currentUser == null)
+    if (_firebaseUser == null)
       return Scaffold(
         backgroundColor: Colors.lightBlueAccent,
         body: Center(
@@ -94,13 +108,11 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         body: Column(
           children: <Widget>[
-            ChatList(
-              snapshots: _dummySnapshot,
-            ),
+            FirestoreMessageStream(),
             Divider(
               height: 1.0,
             ),
-            TextComposer(sendCallback: _sendMessageCallback),
+            TextComposer(currentUser: _currentUser,),
           ],
         ),
       );

@@ -1,9 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class TextComposer extends StatefulWidget {
-
-  final Function(String) sendCallback;
-  const TextComposer({Key key, this.sendCallback}) : super(key: key);
+  final GoogleSignInAccount currentUser;
+  const TextComposer({Key key, this.currentUser}) : super(key: key);
 
   @override
   _TextComposerState createState() => _TextComposerState();
@@ -18,7 +19,18 @@ class _TextComposerState extends State<TextComposer>
     _textEditingController.clear();
     setState(() {
       _isComposing = false;
-      widget.sendCallback(text);
+    });
+    _sendMessage(text: text);
+  }
+
+  void _sendMessage({String text}) {
+    setState(() {
+      Firestore.instance.collection('chat_messages').document().setData({
+        'name': widget.currentUser.displayName,
+        'avatarUrl': widget.currentUser.photoUrl,
+        'photoUrl': null,
+        'text': text
+      });
     });
   }
 
@@ -46,7 +58,8 @@ class _TextComposerState extends State<TextComposer>
                     _isComposing = text.length > 0;
                   });
                 },
-                decoration: InputDecoration.collapsed(hintText: 'Send a message'),
+                decoration:
+                    InputDecoration.collapsed(hintText: 'Send a message'),
               ),
             ),
             IconButton(

@@ -1,8 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'chatMessage.dart';
 
 class ChatList extends StatelessWidget {
-  final List<Map<String, dynamic>> snapshots;
+  final List<DocumentSnapshot> snapshots;
 
   const ChatList({Key key, this.snapshots}): super(key: key);
 
