@@ -4,7 +4,6 @@ import 'chatMessage.dart';
 
 class ChatList extends StatelessWidget {
   final List<DocumentSnapshot> snapshots;
-
   const ChatList({Key key, this.snapshots}): super(key: key);
 
   @override

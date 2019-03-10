@@ -1,8 +1,9 @@
+import 'package:closr_chat/widgets/firestoreListAnimation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
 
-import 'package:closr_chat/widgets/firestoreMessageStream.dart';
+//import 'package:closr_chat/widgets/firestoreMessageStream.dart';
 import 'package:closr_chat/widgets/textComposer.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -64,6 +65,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<Null> _handleSignOut() async {
     _googleSignIn.disconnect();
+    _firebaseAuth.signOut();
   }
 
   @override
@@ -108,7 +110,7 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         body: Column(
           children: <Widget>[
-            FirestoreMessageStream(),
+            FirestoreListAnimation(),
             Divider(
               height: 1.0,
             ),
