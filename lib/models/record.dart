@@ -6,6 +6,7 @@ class Record {
   final String photoUrl;
   final String text;
   final DocumentReference reference;
+  // TODO: implement touch
   //final String touch;
 
   Record.fromMap(Map<String, dynamic> map, {this.reference}) :
@@ -13,6 +14,7 @@ class Record {
     avatarUrl = map['avatarUrl'],
     photoUrl = map['photoUrl'],
     text = map['text'];
+  // TODO: implement touch
     //touch = map['touch'];
 
   Record.fromSnapshot(DocumentSnapshot snapshot) :

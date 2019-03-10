@@ -1,4 +1,4 @@
-import 'package:closr_chat/widgets/chatMessage.dart';
+import 'package:closr_chat/widgets/chat/chatMessage.dart';
 import 'package:flutter/material.dart';
 import 'package:firestore_ui/animated_firestore_list.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

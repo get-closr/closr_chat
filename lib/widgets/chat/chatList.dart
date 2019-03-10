@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'chatMessage.dart';
+import 'package:closr_chat/widgets/chat/chatMessage.dart';
 
 class ChatList extends StatelessWidget {
   final List<DocumentSnapshot> snapshots;

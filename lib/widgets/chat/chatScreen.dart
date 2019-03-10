@@ -1,12 +1,12 @@
-import 'package:closr_chat/widgets/firestoreListAnimation.dart';
+import 'package:closr_chat/widgets/chat/firestoreListAnimation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
 
-//import 'package:closr_chat/widgets/firestoreMessageStream.dart';
-import 'package:closr_chat/widgets/textComposer.dart';
+import 'package:closr_chat/widgets/chat/textComposer.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+// TODO: Refactor Auth into auth.dart
 
 enum MenuItem {
   signout
@@ -18,7 +18,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final List<Map<String, dynamic>> _dummySnapshot = [];
+//  final List<Map<String, dynamic>> _dummySnapshot = [];
   final _googleSignIn = GoogleSignIn();
   GoogleSignInAccount _currentUser;
   final _firebaseAuth = FirebaseAuth.instance;
@@ -26,7 +26,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount account) {
       setState(() {
